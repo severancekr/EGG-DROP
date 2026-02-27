@@ -72,10 +72,10 @@
 
 <div class="container" id="receiptView">
     <div class="receipt-card">
-        <div style="text-align:center; font-weight:bold; border-bottom:1px dashed #eee; padding-bottom:10px; margin-bottom:10px;">ORDER RECEIPT</div>
+        <div style="text-align:center; font-weight:bold; border-bottom:1px dashed #eee; padding-bottom:10px; margin-bottom:10px;">주문 영수증</div>
         <div id="r-details" style="font-size:14px; line-height:2;"></div>
     </div>
-    <button class="submit-btn" style="background:#333;" onclick="location.reload()">처음으로 돌아가기</button>
+    <button class="submit-btn" style="background:#333;" onclick="location.reload()">처음으로 가기(완료)</button>
 </div>
 
 <script>
@@ -153,7 +153,7 @@
 
     function showReceipt() {
         const r = lastSavedData;
-        let details = `날짜: ${r.date}<br>이름: ${r.name}<br>내용: ${r.item}<br><b>장부 차감액: ${Number(r.amount).toLocaleString()}원</b><br>`;
+        let details = `날짜: ${r.date}<br>이름: ${r.name}<br>내용: ${r.item}<br><b>결재금액: ${Number(r.amount).toLocaleString()}원</b><br>`;
         
         if (r.extra > 0) {
             details += `<span style="color:#e31837;">개별 추가금: ${r.extra.toLocaleString()}원</span><br>`;
