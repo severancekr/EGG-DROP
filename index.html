@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* 기존 디자인 완벽 유지  */
+        /* 기존 디자인 완벽 유지 */
         :root { --primary-color: #e31837; --bg-color: #f8f9fa; --card-bg: #ffffff; --text-color: #333; }
         body { font-family: 'Noto Sans KR', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: var(--card-bg); padding: 30px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
@@ -17,7 +17,17 @@
         .submit-btn { width: 100%; background: var(--primary-color); color: white; border: none; padding: 18px; border-radius: 15px; font-size: 18px; font-weight: bold; margin-top: 25px; cursor: pointer; }
         #successView, #receiptView { display: none; text-align: center; }
         .receipt-card { background: #fff; border: 1px solid #eee; padding: 25px; border-radius: 15px; text-align: left; position: relative; margin-bottom: 20px; border-top: 8px solid var(--primary-color); }
-        .admin-link { font-size: 12px; color: #bbb; cursor: pointer; text-align: center; display: block; margin-top: 20px; }
+        
+        /* 🆕 세브란스 로고 버튼용 디자인 추가 */
+        .admin-logo { 
+            display: block; 
+            margin: 30px auto 0; /* 위쪽 여백 30px, 가운데 정렬 */
+            width: 140px; /* 로고 크기 조절 (필요시 숫자 변경 가능) */
+            cursor: pointer; 
+            opacity: 0.8; /* 살짝 투명하게 해서 고급스러운 느낌 */
+            transition: opacity 0.3s;
+        }
+        .admin-logo:hover { opacity: 1; } /* 누를 때 선명해짐 */
     </style>
 </head>
 <body>
@@ -29,7 +39,7 @@
 
     <label>날짜</label><input type="date" id="date">
     <label>이름 (본인 포함 전원 기재)</label>
-    <input type="text" id="name" placeholder="예) 홍길동, 김길동">
+    <input type="text" id="name" placeholder="예) 홍길동, 김길동 등">
 
     <label>인원수 선택</label>
     <select id="peopleCount">
@@ -49,8 +59,9 @@
 
     <button class="submit-btn" id="submitBtn" onclick="confirmAndSubmit()">주문 저장하기</button>
     
-    <span class="admin-link" onclick="toggleAdmin()">세브란스 잔액확인</span>
-    <div id="balanceDisplay" style="display:none; text-align:center; margin-top:10px; font-weight:bold; color:#1a73e8;"></div>
+    <img src="https://tistory1.daumcdn.net/tistory/4488967/skin/images/severancemm.jpg" alt="세브란스 로고" class="admin-logo" onclick="toggleAdmin()" title="관리자 확인">
+    
+    <div id="balanceDisplay" style="display:none; text-align:center; margin-top:15px; font-size:16px; font-weight:bold; color:#1a73e8;"></div>
 </div>
 
 <div class="container" id="successView">
@@ -68,7 +79,7 @@
 </div>
 
 <script>
-    // ✅ 요청하신 GAS URL을 고정했습니다.
+    // ✅ 사용자님의 GAS URL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxVCtl5FDY08qP_uPFh5tvQyuCv5TyAX57dAE71RrmeCHska4E7b3_Ur57Dhg7EqI5v/exec";
 
     function initDate() {
@@ -88,7 +99,7 @@
         const count = document.getElementById('peopleCount').value;
         const rawAmount = Number(document.getElementById('receiptAmount').value.replace(/[^0-9]/g, ""));
         
-        // 🛠️ 새로운 차감 로직 적용: 인원수 * 1만원(한도)과 입력 금액 중 작은 값을 차감
+        // 유동적 차감 로직 (인원수 * 1만원과 입력 금액 중 작은 값을 차감)
         const limitAmount = count * 10000;
         const finalDeduction = Math.min(rawAmount, limitAmount);
         const extraAmount = rawAmount - finalDeduction;
@@ -98,7 +109,7 @@
 
         let msg = `[주문 확인]\n이름: ${name}\n인원: ${count}명\n실제 차감액: ${finalDeduction.toLocaleString()}원`;
         
-        // 추가 금액이 발생했을 때만 표시 (부족한 경우는 표시 안 함)
+        // 추가 금액이 발생했을 때만 표시
         if (extraAmount > 0) {
             msg += `\n추가 결제액: ${extraAmount.toLocaleString()}원`;
         }
@@ -148,8 +159,7 @@
             details += `<span style="color:#e31837;">개별 추가금: ${r.extra.toLocaleString()}원</span><br>`;
         }
         
-        // 🔒 일반 사용자에게는 잔액 정보를 표시하지 않습니다.
-        
+        // 일반 사용자에게는 잔액 표시 안 함
         document.getElementById('r-details').innerHTML = details;
         document.getElementById('successView').style.display = 'none';
         document.getElementById('receiptView').style.display = 'block';
@@ -160,7 +170,8 @@
         if(pw === "11223344") {
             fetch(GAS_URL + "?action=getBalance").then(res => res.text()).then(res => {
                 const disp = document.getElementById('balanceDisplay');
-                disp.style.display = 'block'; disp.innerText = "현재 남은 잔액: " + res;
+                disp.style.display = 'block'; 
+                disp.innerText = "현재 남은 잔액: " + res;
             });
         }
     }
