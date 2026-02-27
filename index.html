@@ -1,22 +1,169 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>선결재시스템</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #F9FAFB; }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            /* 값을 -25px로 조절하여 화면을 조금 더 내렸습니다 */
-            margin-top: -25px; 
-            height: calc(100% + 25px);
-        }
+        /* 기존 디자인 완벽 유지  */
+        :root { --primary-color: #e31837; --bg-color: #f8f9fa; --card-bg: #ffffff; --text-color: #333; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; background: var(--card-bg); padding: 30px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .logo-container { text-align: center; margin-bottom: 20px; }
+        .main-logo { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color); }
+        .header h2 { color: var(--primary-color); text-align: center; margin: 0; font-size: 22px; }
+        .notice-banner { background-color: #fff1f0; color: var(--primary-color); padding: 12px; border-radius: 12px; text-align: center; font-weight: bold; font-size: 13px; margin-bottom: 20px; border: 1px solid #ffa39e; }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 13px; color: #666; }
+        input, select { width: 100%; padding: 14px; margin-top: 8px; border: 1px solid #e1e1e1; border-radius: 12px; box-sizing: border-box; font-size: 16px; }
+        .submit-btn { width: 100%; background: var(--primary-color); color: white; border: none; padding: 18px; border-radius: 15px; font-size: 18px; font-weight: bold; margin-top: 25px; cursor: pointer; }
+        #successView, #receiptView { display: none; text-align: center; }
+        .receipt-card { background: #fff; border: 1px solid #eee; padding: 25px; border-radius: 15px; text-align: left; position: relative; margin-bottom: 20px; border-top: 8px solid var(--primary-color); }
+        .admin-link { font-size: 12px; color: #bbb; cursor: pointer; text-align: center; display: block; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <iframe src="https://script.google.com/macros/s/AKfycbxVCtl5FDY08qP_uPFh5tvQyuCv5TyAX57dAE71RrmeCHska4E7b3_Ur57Dhg7EqI5v/exec" allow="geolocation; microphone; camera; clipboard-write;"></iframe>
+
+<div class="container" id="inputView">
+    <div class="logo-container"><img src="https://naverbooking-phinf.pstatic.net/20220823_58/1661214384331sJDvb_PNG/1%C0%CE%BC%BC%C6%AE_4_%B0%A5%B8%AF%BA%A3%C0%CC%C4%C1%C4%A1%C1%EE_1200X1200.png?type=f459_345_60_sharpen" class="main-logo"></div>
+    <div class="header"><h2>EGG DROP</h2></div>
+    <div class="notice-banner">📢 스마트 차감 관리 시스템</div>
+
+    <label>날짜</label><input type="date" id="date">
+    <label>이름 (본인 포함 전원 기재)</label>
+    <input type="text" id="name" placeholder="예) 홍길동, 김길동">
+
+    <label>인원수 선택</label>
+    <select id="peopleCount">
+        <script>
+            for(let i=1; i<=20; i++) {
+                document.write(`<option value="${i}">${i}명</option>`);
+            }
+        </script>
+    </select>
+
+    <label>총 결제금액 입력(추가 결제 포함)</label>
+    <input type="text" id="receiptAmount" placeholder="예) 10,650" oninput="cleanNumberInput(this)">
+    
+    <div style="margin-top: 10px; font-size: 11px; color: #e31837; font-weight: bold; line-height: 1.4;">
+        * 1인당 1만원 초과 시 1만원만 차감되며, 미달 시 입력한 금액 전액이 차감됩니다.
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="confirmAndSubmit()">주문 저장하기</button>
+    
+    <span class="admin-link" onclick="toggleAdmin()">세브란스 잔액확인</span>
+    <div id="balanceDisplay" style="display:none; text-align:center; margin-top:10px; font-weight:bold; color:#1a73e8;"></div>
+</div>
+
+<div class="container" id="successView">
+    <div style="font-size: 50px;">✅</div>
+    <h3>주문 완료!</h3>
+    <button class="submit-btn" style="background:#333;" onclick="showReceipt()">주문내역 확인</button>
+</div>
+
+<div class="container" id="receiptView">
+    <div class="receipt-card">
+        <div style="text-align:center; font-weight:bold; border-bottom:1px dashed #eee; padding-bottom:10px; margin-bottom:10px;">ORDER RECEIPT</div>
+        <div id="r-details" style="font-size:14px; line-height:2;"></div>
+    </div>
+    <button class="submit-btn" style="background:#333;" onclick="location.reload()">처음으로 돌아가기</button>
+</div>
+
+<script>
+    // ✅ 요청하신 GAS URL을 고정했습니다.
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxVCtl5FDY08qP_uPFh5tvQyuCv5TyAX57dAE71RrmeCHska4E7b3_Ur57Dhg7EqI5v/exec";
+
+    function initDate() {
+        const today = new Date();
+        document.getElementById('date').value = today.toISOString().split('T')[0];
+    }
+    initDate();
+
+    function cleanNumberInput(obj) {
+        let val = obj.value.replace(/[^0-9]/g, ""); 
+        if(val) obj.value = Number(val).toLocaleString(); 
+        else obj.value = "";
+    }
+
+    function confirmAndSubmit() {
+        const name = document.getElementById('name').value;
+        const count = document.getElementById('peopleCount').value;
+        const rawAmount = Number(document.getElementById('receiptAmount').value.replace(/[^0-9]/g, ""));
+        
+        // 🛠️ 새로운 차감 로직 적용: 인원수 * 1만원(한도)과 입력 금액 중 작은 값을 차감
+        const limitAmount = count * 10000;
+        const finalDeduction = Math.min(rawAmount, limitAmount);
+        const extraAmount = rawAmount - finalDeduction;
+
+        if(!name) { alert("이름을 입력해주세요!"); return; }
+        if(!rawAmount) { alert("결제 금액을 입력해주세요!"); return; }
+
+        let msg = `[주문 확인]\n이름: ${name}\n인원: ${count}명\n실제 차감액: ${finalDeduction.toLocaleString()}원`;
+        
+        // 추가 금액이 발생했을 때만 표시 (부족한 경우는 표시 안 함)
+        if (extraAmount > 0) {
+            msg += `\n추가 결제액: ${extraAmount.toLocaleString()}원`;
+        }
+
+        msg += `\n\n이 내용으로 장부에 기록할까요?`;
+        
+        if(confirm(msg)) {
+            submitData(name, count, rawAmount, finalDeduction, extraAmount);
+        }
+    }
+
+    function submitData(name, count, rawAmount, finalDeduction, extraAmount) {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true; btn.innerText = "저장 중...";
+
+        const payload = {
+            date: document.getElementById('date').value,
+            name: name,
+            item: `인원:${count}명 (총:${rawAmount.toLocaleString()}원 / 추가:${(extraAmount > 0 ? extraAmount : 0).toLocaleString()}원)`,
+            amount: finalDeduction, 
+            note: ""
+        };
+
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(res => {
+            if(res.result === "success") {
+                lastSavedData = { ...payload, extra: extraAmount };
+                document.getElementById('inputView').style.display = 'none';
+                document.getElementById('successView').style.display = 'block';
+            } else {
+                alert("저장 에러: " + res.error);
+                btn.disabled = false;
+            }
+        }).catch(e => { 
+            alert("저장 실패 (네트워크 연결을 확인하세요)"); 
+            btn.disabled = false; 
+            btn.innerText = "주문 저장하기";
+        });
+    }
+
+    function showReceipt() {
+        const r = lastSavedData;
+        let details = `날짜: ${r.date}<br>이름: ${r.name}<br>내용: ${r.item}<br><b>장부 차감액: ${Number(r.amount).toLocaleString()}원</b><br>`;
+        
+        if (r.extra > 0) {
+            details += `<span style="color:#e31837;">개별 추가금: ${r.extra.toLocaleString()}원</span><br>`;
+        }
+        
+        // 🔒 일반 사용자에게는 잔액 정보를 표시하지 않습니다.
+        
+        document.getElementById('r-details').innerHTML = details;
+        document.getElementById('successView').style.display = 'none';
+        document.getElementById('receiptView').style.display = 'block';
+    }
+
+    function toggleAdmin() {
+        const pw = prompt("관리자 비밀번호를 입력하세요.");
+        if(pw === "11223344") {
+            fetch(GAS_URL + "?action=getBalance").then(res => res.text()).then(res => {
+                const disp = document.getElementById('balanceDisplay');
+                disp.style.display = 'block'; disp.innerText = "현재 남은 잔액: " + res;
+            });
+        }
+    }
+</script>
 </body>
 </html>
